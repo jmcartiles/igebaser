@@ -1,0 +1,131 @@
+---
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+## Introduction
+
+The [Galician Statistics Institute](https://www.ige.eu/web/index.jsp?idioma=es) (Instituto Galego de Estatística, IGE) is an autonomous body of the Xunta de Galicia created in 1988 and which is governed basically by Law 9/1988 on Statistics of Galicia. In its mission to promote the development of the statistical system of the Autonomous Community must provide services of collection and dissemination of available statistical documentation, develop databases of public interest, analyze the needs and evolution of the demand for statistics and ensure their dissemination.
+
+## igebaser
+
+The goal of the `igebaser` R-package is to provide a bridge between these alternatives and allow researchers to focus on their research questions and not the question of accessing the data. The igebaser R-package allows researchers to quickly search and download the data of their particular interest in a programmatic and reproducible fashion; this facilitates a seamless integration into their workflow and allows analysis to be quickly rerun on different areas of interest and with realtime access to the latest available data.
+
+## Installation
+
+You can download the released version of igebaser from Github with:
+
+```{r}
+# devtools::install_github("jmcartiles/igebaser")
+```
+
+### Highlighted features of the `igebaser` R-package: 
+
+- Access to all data available in the API
+- Support for searching and downloading data
+- Ability to return `POSIXct` dates for easy integration into plotting and time-series analysis techniques
+- Support for `grep` style searching for data descriptions and names
+
+# Getting Started
+
+The first step would be searching for the data you are interested in. `igebase_search()` provides `grep` style searching of all available indicators from the IGE API and returns the indicator information that matches your query.
+
+## Finding available data with `cache`
+
+For performance and ease of use, a cached version of useful information is provided with the `igebaser` R-package. This data is called `cache` and provides a snapshot of available indicators, and other relevant information. `cache` is by default the the source from which `igebase_search()` and `igebase()` uses to find matching information. The structure of `cache` is as follows
+
+```{r}
+library(igebaser)
+str(igebaser::cache)
+```
+
+## Search available data with `igebase_search()`
+
+`igebase_search()` searches through the `cache` data frame to find indicators that match a search pattern. An example of the structure of this data frame is below
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(igebaser::cache[4310:4311, ]))
+```
+
+By default the search is done over the `label` field and returns the `ID` and the `label`. To return all the columns of the matching rows you can set `extra = TRUE`.
+
+```{r}
+library(igebaser)
+busqueda <- igebase_search(pattern = "parado")
+head(busqueda)
+```
+
+Other fields can be searched by simply changing the `fields` parameter. For example
+```{r}
+library(igebaser)
+padron_busqueda <- igebase_search(pattern = "INE. Padrón continuo", fields = "source", extra = TRUE)
+head(padron_busqueda)
+```
+
+Regular expressions are also supported.
+```{r}
+library(igebaser)
+# 'pobreza' OR 'parados' OR 'trabajador'
+popatr_busqueda <- igebase_search(pattern = "pobreza|parados|trabajador", extra = TRUE)
+head(popatr_busqueda)
+```
+
+## Downloading data with `igebase()`
+
+Once you have found the set of indicators that you would like to explore further, the next step is downloading the data with `igebase()`. The following examples are meant to highlight the different ways in which `igebase()` can be used and demonstrate the major optional parameters.
+
+```{r}
+library(igebaser)
+padron_data <- igebase(igebase_ID = 589)
+head(padron_data)
+```
+
+If you are interested in only some subset of regions you can pass along the specific region to the `region` parameter.
+```{r}
+library(igebaser)
+padron_data_galicia <- igebase(igebase_ID = 589, region = "Galicia")
+head(padron_data_galicia)
+```
+
+### Using `POSIXct = TRUE`
+
+The default format for the `tempo` column is not conducive to sorting or plotting, especially when downloading sub annual data, such as monthly or quarterly data. To address this, if `TRUE`, the `POSIXct` parameter adds the additional columns `periodo` and `periodicidade`. `periodo` converts the default date into a `POSIXct`. `periodicidade` denotes the time resolution that the date represents. If `POSIXct = TRUE` is not available, a `warning` is produced and the option is ignored.
+
+`startdate` and `enddate` must be in the format `yyyy-mm-dd`.
+```{r}
+library(igebaser)
+padron_data_galicia <- igebase(igebase_ID = 589, region = "Galicia", POSIXct = TRUE, startdate = "2000-01-01", enddate = "2018-12-01")
+head(padron_data_galicia)
+```
+
+The `POSIXct = TRUE` option makes plotting and sorting dates much easier.
+```{r, fig.height = 4, fig.width = 7.5}
+library(igebaser)
+library(ggplot2)
+library(dplyr)
+padron_data_galicia <- igebase(igebase_ID = 589, region = "Galicia", POSIXct = TRUE, startdate = "2000-01-01", enddate = "2018-12-01") %>%
+  filter(sexo != "Total")
+ggplot(padron_data_galicia, aes(x = periodo, y = daton, color = sexo)) +
+  geom_line() +
+  geom_point() +
+  theme(panel.background = element_blank())
+```
+
+### Using `freq`
+If the data has several granularity, you can select some of them with the parameter `freq`. Possible values are:
+`anual`,`trimestral`,`mensual`.
+
+```{r}
+library(igebaser)
+clima_data <- igebase(1651, POSIXct = TRUE, label = TRUE, freq = "anual", show_metadata = TRUE)
+head(clima_data)
+```
+

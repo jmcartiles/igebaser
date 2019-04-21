@@ -1,0 +1,13 @@
+Package: igebaser
+Type: Package
+Title: Programmatic Access to Data from the IGE API
+Description: Functions for searching and downloading data and statistics from the IGE API (<https://www.ige.eu/web/index.jsp?idioma=gl>).
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Cazorla-Artiles", "José Manuel", email = "jmcartiles@gmail.com", role = "aut"),
+    person("González-Martel", "Christian", email = "christian.gonzalez@ulpgc.es", role = c("aut","cre")))
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+Imports: utils
